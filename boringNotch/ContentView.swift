@@ -197,9 +197,14 @@ struct ContentView: View {
                         }
                     }
                     .onChange(of: vm.notchState) { _, newState in
-                        if newState == .closed && isHovering {
-                            withAnimation {
-                                isHovering = false
+                        if newState == .closed {
+                            if isHovering {
+                                withAnimation {
+                                    isHovering = false
+                                }
+                            }
+                            if let window = NSApp.keyWindow, window is BoringNotchSkyLightWindow {
+                                window.resignKey()
                             }
                         }
                     }
@@ -652,7 +657,7 @@ struct ContentView: View {
             }
             return
         }
-        guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard vm.notchState == .open && !vm.isHoveringCalendar && !vm.isHoveringTodos else { return }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20
