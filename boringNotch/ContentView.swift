@@ -406,6 +406,8 @@ struct ContentView: View {
                         ShelfView()
                     case .systemActivity:
                         SystemActivityView(isHoveringProcessList: $isHoveringProcessList)
+                    case .todos:
+                        TodoView()
                     }
                 }
                 .transition(
