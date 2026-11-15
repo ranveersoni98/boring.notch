@@ -592,6 +592,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         previousScreens = NSScreen.screens
 
+        // Initialize background managers
+        _ = WiFiActivityManager.shared
+        _ = BluetoothActivityManager.shared
+        _ = BatteryStatusViewModel.shared
+
         // make sure OSD subsystems are in the right state now that initial
         // notch windows have been created/cleaned up
         coordinator.applyOSDSources()

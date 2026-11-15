@@ -89,8 +89,12 @@ struct ContentView: View {
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
-        if coordinator.expandingView.type == .battery && coordinator.expandingView.show
-            && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
+        if (coordinator.expandingView.type == .battery && coordinator.expandingView.show
+            && vm.notchState == .closed && Defaults[.showPowerStatusNotifications])
+            || (coordinator.expandingView.type == .wifi && coordinator.expandingView.show
+            && vm.notchState == .closed && Defaults[.showWiFiNotifications])
+            || (coordinator.expandingView.type == .bluetooth && coordinator.expandingView.show
+            && vm.notchState == .closed && Defaults[.showBluetoothNotifications])
         {
             chinWidth = 640
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
@@ -304,10 +308,18 @@ struct ContentView: View {
                         && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
                     {
                         HStack(spacing: 0) {
-                            HStack {
+                            HStack(spacing: 8) {
+                                Image(systemName: batteryModel.statusIcon)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(batteryModel.statusColor)
+                                    .contentTransition(.symbolEffect(.automatic))
+
                                 Text(batteryModel.statusText)
                                     .font(.subheadline)
+                                    .fontWeight(.medium)
                                     .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .allowsTightening(true)
                             }
 
                             Rectangle()
@@ -328,6 +340,20 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: displayClosedNotchHeight, alignment: .center)
+                      } else if coordinator.expandingView.type == .wifi && coordinator.expandingView.show
+                        && vm.notchState == .closed && Defaults[.showWiFiNotifications]
+                      {
+                        WiFiNotificationView(
+                            isConnected: coordinator.expandingView.value == 1,
+                            ssid: WiFiActivityManager.shared.ssid
+                        )
+                      } else if coordinator.expandingView.type == .bluetooth && coordinator.expandingView.show
+                        && vm.notchState == .closed && Defaults[.showBluetoothNotifications]
+                      {
+                        BluetoothNotificationView(
+                            isConnected: coordinator.expandingView.value == 1,
+                            deviceName: BluetoothActivityManager.shared.lastEventDeviceName
+                        )
                       } else if coordinator.shouldShowSneakPeek(on: vm.screenUUID) && Defaults[.inlineOSD] && (coordinator.sneakPeekState(for: vm.screenUUID).type != .music) && (coordinator.sneakPeekState(for: vm.screenUUID).type != .battery) && vm.notchState == .closed {
                           InlineOSD(
                               type: coordinator.binding(for: vm.screenUUID).type,

@@ -48,8 +48,13 @@ build/
 *.xcodeproj/xcuserdata
 *.xcodeproj/project.xcuserdata
 
+# Local release artifacts
+Release/
+
 # Build artifacts
 *.ipa
 *.xcarchive
 *.dSYM
 
+# Stray local compiler module cache
+boringNotch.xcodeproj/-Xcc/

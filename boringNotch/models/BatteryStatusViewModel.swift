@@ -41,10 +41,32 @@ class BatteryStatusViewModel: ObservableObject {
             if isCharging {
                 return LocalizedStringKey("Charging battery")
             }
-            if level < 100 {
-                return LocalizedStringKey("Not charging")
+            if level >= 100 {
+                return LocalizedStringKey("Full charge")
             }
-            return LocalizedStringKey("Full charge")
+            return LocalizedStringKey(isPluggedIn ? "Not charging" : "Unplugged")
+        }
+    }
+
+    var statusIcon: String {
+        switch lastStatus {
+        case .plugged(let plugged):
+            return plugged ? "powerplug.fill" : "powerplug.slash.fill"
+        case .lowPower(let enabled):
+            return enabled ? "bolt.circle.fill" : "bolt.circle"
+        case .charging(let isCharging, _):
+            return isCharging ? "bolt.fill" : (isPluggedIn ? "powerplug.fill" : "powerplug.slash.fill")
+        }
+    }
+
+    var statusColor: Color {
+        switch lastStatus {
+        case .plugged(let plugged):
+            return plugged ? .green : .orange
+        case .lowPower(let enabled):
+            return enabled ? .yellow : .gray
+        case .charging(let isCharging, _):
+            return isCharging ? .green : (isPluggedIn ? .green : .orange)
         }
     }
 
@@ -82,8 +104,6 @@ class BatteryStatusViewModel: ObservableObject {
             print("🔌 Power source: \(isPluggedIn ? "Connected" : "Disconnected")")
             withAnimation {
                 self.isPluggedIn = isPluggedIn
-                // remember the last battery-related message so the computed
-                // property can translate it later
                 self.lastStatus = .plugged(isPluggedIn)
                 self.notifyImportanChangeStatus()
             }
@@ -96,20 +116,20 @@ class BatteryStatusViewModel: ObservableObject {
 
         case .lowPowerModeChanged(let isEnabled):
             print("⚡ Low power mode: \(isEnabled ? "Enabled" : "Disabled")")
-            self.notifyImportanChangeStatus()
             withAnimation {
                 self.isInLowPowerMode = isEnabled
                 self.lastStatus = .lowPower(isEnabled)
+                self.notifyImportanChangeStatus()
             }
 
         case .isChargingChanged(let isCharging):
             print("🔌 Charging: \(isCharging ? "Yes" : "No")")
-            print("maxCapacity: \(self.maxCapacity.map { "\($0)" } ?? "Unavailable")")
-            print("levelBattery: \(self.levelBattery)")
-            self.notifyImportanChangeStatus()
             withAnimation {
                 self.isCharging = isCharging
-                self.lastStatus = .charging(isCharging: isCharging, level: self.levelBattery)
+                if self.isPluggedIn {
+                    self.lastStatus = .charging(isCharging: isCharging, level: self.levelBattery)
+                    self.notifyImportanChangeStatus()
+                }
             }
 
         case .timeToFullChargeChanged(let time):
@@ -160,8 +180,12 @@ class BatteryStatusViewModel: ObservableObject {
     /// Notifies important changes in the battery status with an optional delay
     /// - Parameter delay: The delay before notifying the change, default is 0.0
     private func notifyImportanChangeStatus(delay: Double = 0.0) {
-        Task {
-            try? await Task.sleep(for: .seconds(delay))
+        guard Defaults[.showPowerStatusNotifications] else { return }
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: .seconds(delay))
+            } catch { return }
+            guard Defaults[.showPowerStatusNotifications] else { return }
             self.coordinator.toggleExpandingView(status: true, type: .battery)
         }
     }

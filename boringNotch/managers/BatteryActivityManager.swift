@@ -17,36 +17,9 @@ class BatteryActivityManager {
     var onTimeToDischargeChange: ((Int) -> Void)?
 
     private var batterySource: CFRunLoopSource?
-    private var observers: [(BatteryEvent) -> Void] = []
+    private var observers: [Int: (BatteryEvent) -> Void] = [:]
+    private var nextObserverID = 0
     private var previousBatteryInfo: BatteryInfo?
-    // actor-based queue to serialize notification delivery
-    private let notificationQueueActor = NotificationQueue()
-
-    /// An actor responsible for serializing and delivering events with a 1‑second delay.
-    private actor NotificationQueue {
-        private var queue: [BatteryEvent] = []
-        private var processing = false
-
-        /// Enqueue an event; the `deliver` closure is always invoked on the main actor.
-        func enqueue(_ event: BatteryEvent, deliver: @MainActor @escaping (BatteryEvent) -> Void) {
-            queue.append(event)
-            if !processing {
-                processing = true
-                Task { await process(deliver: deliver) }
-            }
-        }
-
-        private func process(deliver: @MainActor @escaping (BatteryEvent) -> Void) async {
-            while !queue.isEmpty {
-                let event = queue.removeFirst()
-                // pause between notifications
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                await deliver(event)
-            }
-            processing = false
-        }
-    }
-
     enum BatteryEvent {
         case powerSourceChanged(isPluggedIn: Bool)
         case batteryLevelChanged(level: Float)
@@ -105,13 +78,13 @@ class BatteryActivityManager {
             return
         }
         batterySource = powerSource
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), powerSource, .defaultMode)
+        CFRunLoopAddSource(CFRunLoopGetMain(), powerSource, .commonModes)
     }
 
     /// Stops monitoring battery changes
     private func stopMonitoring() {
         if let powerSource = batterySource {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), powerSource, .defaultMode)
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), powerSource, .commonModes)
             batterySource = nil
         }
     }
@@ -123,7 +96,7 @@ class BatteryActivityManager {
         eventGenerator: (T) -> BatteryEvent
     ) {
         if previous != current {
-            enqueueNotification(eventGenerator(current))
+            notifyObservers(event: eventGenerator(current))
         }
     }
     
@@ -131,71 +104,59 @@ class BatteryActivityManager {
     /// Checks for changes in battery status and notifies observers
     private func notifyBatteryChanges() {
         let batteryInfo = getBatteryInfo()
+        let previousInfo = previousBatteryInfo
+        previousBatteryInfo = batteryInfo
         
         // Check for changes
-        if let previousInfo = previousBatteryInfo {
-            // Usar la función auxiliar para cada propiedad
+        if let previous = previousInfo {
             checkAndNotify(
-                previous: previousInfo.isPluggedIn,
+                previous: previous.isPluggedIn,
                 current: batteryInfo.isPluggedIn,
                 eventGenerator: { .powerSourceChanged(isPluggedIn: $0) }
             )
             
             checkAndNotify(
-                previous: previousInfo.currentCapacity,
+                previous: previous.currentCapacity,
                 current: batteryInfo.currentCapacity,
                 eventGenerator: { .batteryLevelChanged(level: $0) }
             )
             
             checkAndNotify(
-                previous: previousInfo.isCharging,
+                previous: previous.isCharging,
                 current: batteryInfo.isCharging,
                 eventGenerator: { .isChargingChanged(isCharging: $0) }
             )
             
             checkAndNotify(
-                previous: previousInfo.isInLowPowerMode,
+                previous: previous.isInLowPowerMode,
                 current: batteryInfo.isInLowPowerMode,
                 eventGenerator: { .lowPowerModeChanged(isEnabled: $0) }
             )
             
             checkAndNotify(
-                previous: previousInfo.timeToFullCharge,
+                previous: previous.timeToFullCharge,
                 current: batteryInfo.timeToFullCharge,
                 eventGenerator: { .timeToFullChargeChanged(time: $0) }
             )
 
             checkAndNotify(
-                previous: previousInfo.timeToDischarge,
+                previous: previous.timeToDischarge,
                 current: batteryInfo.timeToDischarge,
                 eventGenerator: { .timeToDischargeChanged(time: $0) }
             )
 
             checkAndNotify(
-                previous: previousInfo.maxCapacity,
+                previous: previous.maxCapacity,
                 current: batteryInfo.maxCapacity,
                 eventGenerator: { .maxCapacityChanged(capacity: $0) }
             )
 
             checkAndNotify(
-                previous: previousInfo.maxAdapterWatts,
+                previous: previous.maxAdapterWatts,
                 current: batteryInfo.maxAdapterWatts,
                 eventGenerator: { .adapterWattageChanged(watts: $0) }
             )
-        } else {
-            // First time notification
-            enqueueNotification(.powerSourceChanged(isPluggedIn: batteryInfo.isPluggedIn))
-            enqueueNotification(.batteryLevelChanged(level: batteryInfo.currentCapacity))
-            enqueueNotification(.isChargingChanged(isCharging: batteryInfo.isCharging))
-            enqueueNotification(.lowPowerModeChanged(isEnabled: batteryInfo.isInLowPowerMode))
-            enqueueNotification(.timeToFullChargeChanged(time: batteryInfo.timeToFullCharge))
-            enqueueNotification(.timeToDischargeChanged(time: batteryInfo.timeToDischarge))
-            enqueueNotification(.maxCapacityChanged(capacity: batteryInfo.maxCapacity))
-            enqueueNotification(.adapterWattageChanged(watts: batteryInfo.maxAdapterWatts))
         }
-
-        // Update previous battery info
-        previousBatteryInfo = batteryInfo
 
         // Trigger optional callbacks
         DispatchQueue.main.async { [weak self] in
@@ -207,15 +168,6 @@ class BatteryActivityManager {
             self.onTimeToFullChargeChange?(batteryInfo.timeToFullCharge)
             self.onTimeToDischargeChange?(batteryInfo.timeToDischarge)
             self.onMaxCapacityChange?(batteryInfo.maxCapacity)
-        }
-    }
-
-    /// Enqueues a notification to be processed using the concurrency-based queue actor.
-    private func enqueueNotification(_ event: BatteryEvent) {
-        Task { @MainActor in
-            await notificationQueueActor.enqueue(event) { [weak self] ev in
-                self?.notifyObservers(event: ev)
-            }
         }
     }
     
@@ -354,15 +306,16 @@ class BatteryActivityManager {
     /// - Parameter observer: The observer closure to be called on battery events
     /// - Returns: The ID of the observer for later removal
     func addObserver(_ observer: @escaping (BatteryEvent) -> Void) -> Int {
-        observers.append(observer)
-        return observers.count - 1
+        let id = nextObserverID
+        nextObserverID += 1
+        observers[id] = observer
+        return id
     }
 
     /// Removes an observer by its ID
     /// - Parameter id: The ID of the observer to be removed
     func removeObserver(byId id: Int) {
-        guard id >= 0 && id < observers.count else { return }
-        observers.remove(at: id)
+        observers[id] = nil
     }
     
     /// Notifies all observers of a battery event
@@ -370,7 +323,7 @@ class BatteryActivityManager {
     private func notifyObservers(event: BatteryEvent) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            for observer in self.observers {
+            for observer in Array(self.observers.values) {
                 observer(event)
             }
         }

@@ -163,6 +163,10 @@
 		C0D3A0053100000100000005 /* SystemActivitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3A0063100000100000006 /* SystemActivitySettingsView.swift */; };
 		F1F2A0A100000000000000F1 /* AudioCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F2A0A200000000000000F2 /* AudioCaptureManager.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
+		F38DE64A2D8243E7008B5C6D /* WiFiActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6492D8243E2008B5C6D /* WiFiActivityManager.swift */; };
+		14B700012F00000100000002 /* BluetoothActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B700012F00000100000001 /* BluetoothActivityManager.swift */; };
+		14B700012F00000100000004 /* BluetoothNotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B700012F00000100000003 /* BluetoothNotificationView.swift */; };
+		14E9FEAC2C70BF610062E83F /* WiFiNotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E9FEAB2C70BF610062E83F /* WiFiNotificationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -349,6 +353,10 @@
 		C0D3A0063100000100000006 /* SystemActivitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActivitySettingsView.swift; sourceTree = "<group>"; };
 		F1F2A0A200000000000000F2 /* AudioCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureManager.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
+		F38DE6492D8243E2008B5C6D /* WiFiActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiActivityManager.swift; sourceTree = "<group>"; };
+		14B700012F00000100000001 /* BluetoothActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothActivityManager.swift; sourceTree = "<group>"; };
+		14B700012F00000100000003 /* BluetoothNotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothNotificationView.swift; sourceTree = "<group>"; };
+		14E9FEAB2C70BF610062E83F /* WiFiNotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiNotificationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -624,6 +632,8 @@
 				11DB26652EDD0BE1001EA0CF /* LyricsService.swift */,
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
+				F38DE6492D8243E2008B5C6D /* WiFiActivityManager.swift */,
+				14B700012F00000100000001 /* BluetoothActivityManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
 				147163992C5D35FF0068B555 /* MusicManager.swift */,
 				F1F2A0A200000000000000F2 /* AudioCaptureManager.swift */,
@@ -847,6 +857,8 @@
 				B1C974332C642B6D0000E707 /* MarqueeTextView.swift */,
 				B1D365CD2C6A979C0047BDBC /* LiveActivityModifier.swift */,
 				14E9FEA92C70BF610062E83F /* DownloadView.swift */,
+				14B700012F00000100000003 /* BluetoothNotificationView.swift */,
+				14E9FEAB2C70BF610062E83F /* WiFiNotificationView.swift */,
 			);
 			path = "Live activities";
 			sourceTree = "<group>";
@@ -1115,6 +1127,10 @@
 				118EBE3B2E9720C500D54B5A /* ShelfStateViewModel.swift in Sources */,
 				11F747CE2EC75CEA00F841DB /* DragPreviewView.swift in Sources */,
 				F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */,
+				F38DE64A2D8243E7008B5C6D /* WiFiActivityManager.swift in Sources */,
+				14B700012F00000100000002 /* BluetoothActivityManager.swift in Sources */,
+				14B700012F00000100000004 /* BluetoothNotificationView.swift in Sources */,
+				14E9FEAC2C70BF610062E83F /* WiFiNotificationView.swift in Sources */,
 				B10348D92C74E56000475897 /* ConditionalModifier.swift in Sources */,
 				118D1FD12E98FF5F00A2FF63 /* SharingStateManager.swift in Sources */,
 				11985BE62F37A3FC00F81585 /* BetterDisplayNotificationModels.swift in Sources */,

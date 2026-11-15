@@ -197,10 +197,8 @@ final class QuickShareService: ObservableObject {
             }
         }
         
-        if let idx = providers.firstIndex(where: { $0.id == QuickShareProvider.airDropId }) {
-            let ad = providers.remove(at: idx)
-            providers.insert(ad, at: 0)
-        }
+        // Remove AirDrop from available providers
+        providers.removeAll(where: { $0.id == QuickShareProvider.airDropId })
 
         if !providers.contains(where: { $0.id == QuickShareProvider.systemShareMenuId }) {
             providers.append(.systemShareMenu)
@@ -340,10 +338,6 @@ private class SharingServiceDelegate: NSObject {}
 extension QuickShareProvider {
     static var defaultProvider: QuickShareProvider {
         let svc = QuickShareService.shared
-
-        if let airdrop = svc.availableProviders.first(where: { $0.id == QuickShareProvider.airDropId }) {
-            return airdrop
-        }
         return svc.availableProviders.first ?? .systemShareMenu
     }
 }
